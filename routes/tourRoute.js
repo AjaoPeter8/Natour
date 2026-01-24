@@ -4,10 +4,12 @@ import {
   deleteTour,
   getAllTours,
   createTour,
-  updateTour
+  updateTour,
+  aliasTopTours
 } from '../controllers/tourController.js';
 
 const router = express.Router();
+router.route('/top-5-tours').get(aliasTopTours, getAllTours);
 // router.param('id', checkID);
 
 router.route('/:id').get(getTour).delete(deleteTour).patch(updateTour);

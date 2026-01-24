@@ -1,31 +1,26 @@
 import Tour from '../models/tourModel.js';
+import APIFeatures from '../utils/apiFeatures.js';
 
-//   console.log(val);
-//   const id = val * 1;
-//   const tour = tours.find((el) => el.id === id);
-//   if (!tour) {
-//     return res.status(404).json({
-//       status: 'fail',
-//       message: 'Invalid ID',
-//     });
-//   }
 
-//   next();
-// };
+
+export const aliasTopTours = (req, res, next) => {
+  req.queryParams = {
+    ...req.query,
+    limit: '5',
+    sort: '-ratingsAverage,price',
+    fields: 'name,price,ratingsAverage,summary,difficulty'
+  };
+  console.log('After aliasTopTours:', req.queryParams);
+  next();
+}
 
 export const getAllTours = async (req, res) => {
   try {
-    const queryObj = { ...req.query };
-    const excludedFields = ['page', 'sort', 'limit', 'fields'];
-    excludedFields.forEach(el => delete queryObj[el])
-
-   let queryStr = JSON.stringify(queryObj);
-   queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
-   
-   console.log(JSON.parse(queryStr));
-
-    const query = Tour.find(JSON.parse(queryStr));
-    const tours = await query;
+     // Use queryParams if it exists (from aliasTopTours), otherwise use req.query
+     const query = req.queryParams || req.query;
+     console.log('query:', query);
+    const features = new APIFeatures(Tour.find(), query).filter().sort().limitFields().paginate();
+    const tours = await features.query;
 
     res.status(200).json({
       status: 'success',
@@ -35,6 +30,7 @@ export const getAllTours = async (req, res) => {
       },
     });
   } catch (err) {
+    console.log(err);
     res.status(404).json({
       status: 'fail',
       message: err,

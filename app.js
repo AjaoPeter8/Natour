@@ -6,9 +6,11 @@ import qs from 'qs';
 const app = express();
 app.use(express.json());
 app.set('query parser', str => qs.parse(str));
+
 app.use(express.static(`${import.meta.dirname}/public`));
 app.use(morgan('dev'));
-
+// app.set('query parser', 'extended'); // Add this to ensure req.query is a standard object
+// app.set('query parser fn', (str) => qs.parse(str));
 
 
 
