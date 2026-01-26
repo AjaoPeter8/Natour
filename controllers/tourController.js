@@ -73,9 +73,9 @@ export const getTourStats = async (req, res) => {
           maxPrice: { $max: '$price' },
         }
       },
-      {
-        $match: { _id: { $ne: 'EASY' } }
-      }
+      // {
+      //   $match: { _id: { $ne: 'EASY' } }
+      // }
     ])
     res.status(200).json({
       status: 'success',
@@ -154,9 +154,10 @@ export const createTour = async (req, res) => {
       },
     });
   } catch (err) {
+    console.log(err);
     res.status(400).json({
       status: 'fail',
-      message: 'Invalid data sent!',
+      message: err,
     });
   }
 };
@@ -191,7 +192,7 @@ export const updateTour = async (req, res) => {
   catch (err) {
     res.status(400).json({
       status: 'fail',
-      message: 'Invalid data sent!',
+      message: err,
     });
   }
 
