@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
-
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -18,10 +18,16 @@ const userSchema = new mongoose.Schema({
   photo: {
     type: String,
   },
+  role: {
+    type: String,
+    enum: ['user', 'guide', 'lead-guide', 'admin'],
+    default: 'user',
+  },
   password: {
     type: String,
     required: [true, 'Please provide a password'],
     minlength: [8, 'Password must be at least 8 characters'],
+    select: false,
   },
   passwordConfirm: {
     type: String,
@@ -33,11 +39,13 @@ const userSchema = new mongoose.Schema({
       message: 'Passwords are not the same!',
     },
   },
+  passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date,
 });
 
 userSchema.pre('save', async function () {
-    console.log(this);
-  if (!this.isModified('password')) return;;
+  if (!this.isModified('password')) return;
 
   // Hash the password with cost of 12
   this.password = await bcrypt.hash(this.password, 12);
@@ -45,6 +53,38 @@ userSchema.pre('save', async function () {
   // Delete passwordConfirm field
   this.passwordConfirm = undefined;
 });
+
+userSchema.methods.correctPassword = async function (
+  candidatePassword,
+  userPassword,
+) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+userSchema.methods.changedPasswordAfter = function (JwtTimeStamp) {
+  if (this.passwordChangedAt) {
+    const changedTimeStamp = parseInt(
+      this.passwordChangedAt.getTime() / 1000,
+      10,
+    );
+    console.log(JwtTimeStamp, changedTimeStamp);
+    return JwtTimeStamp < changedTimeStamp;
+  }
+  return false;
+};
+
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  console.log({resetToken}, this.passwordResetToken);
+  return resetToken;
+};
+
 
 const User = mongoose.model('User', userSchema);
 

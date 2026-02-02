@@ -7,16 +7,21 @@ import {
   createTour,
   updateTour,
   aliasTopTours,
-  getMonthlyPlan
+  getMonthlyPlan,
 } from '../controllers/tourController.js';
+import { protect, restrictTo } from '../controllers/authController.js';
 
 const router = express.Router();
 router.route('/tour-stats').get(getTourStats);
 router.route('/top-5-tours').get(aliasTopTours, getAllTours);
-router.route('/tour-plan/:year').get(getMonthlyPlan)
+router.route('/tour-plan/:year').get(getMonthlyPlan);
 // router.param('id', checkID);
 
-router.route('/:id').get(getTour).delete(deleteTour).patch(updateTour);
-router.route('/').get(getAllTours).post(createTour);
+router
+  .route('/:id')
+  .get(protect, getTour)
+  .delete(protect, restrictTo("admin", "lead-guide"), deleteTour)
+  .patch(protect, updateTour);
+router.route('/').get(protect, getAllTours).post(protect, createTour);
 
 export default router;
