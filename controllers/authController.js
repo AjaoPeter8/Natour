@@ -1,9 +1,10 @@
-import {promisify} from 'util';
+import { promisify } from 'util';
 import User from '../models/userModel.js';
 import catchAsync from '../utils/catchAsync.js';
 import jwt from 'jsonwebtoken';
 import AppError from '../utils/appError.js';
 import bcrypt from 'bcryptjs';
+import sendEmail from '../utils/sendEmail.js';
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -17,7 +18,7 @@ export const signup = catchAsync(async (req, res, next) => {
     email: req.body.email,
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
-    passwordChangedAt: req.body.passwordChangedAt
+    passwordChangedAt: req.body.passwordChangedAt,
   });
   const token = signToken(newUser._id);
   res.status(200).json({
@@ -69,11 +70,16 @@ export const protect = catchAsync(async (req, res, next) => {
 
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
   const currentUser = await User.findById(decoded.id);
-  if(!currentUser) {
-    return next(new AppError("The user associated with this token has been deleted", 401));
+  if (!currentUser) {
+    return next(
+      new AppError('The user associated with this token has been deleted', 401),
+    );
   }
-  if(currentUser.changedPasswordAfter(decoded.iat)) {
-    return next(new AppError("The password was changed. Please login again"), 401)
+  if (currentUser.changedPasswordAfter(decoded.iat)) {
+    return next(
+      new AppError('The password was changed. Please login again'),
+      401,
+    );
   }
 
   req.user = currentUser;
@@ -82,23 +88,48 @@ export const protect = catchAsync(async (req, res, next) => {
 
 export const restrictTo = (...roles) => {
   return (req, res, next) => {
-    console.log("Running:", req.user)
-    if(!roles.includes(req.user.role)){
-      return next(new AppError("You do not have the permission to perform this request", 403))
+    console.log('Running:', req.user);
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError(
+          'You do not have the permission to perform this request',
+          403,
+        ),
+      );
     }
     next();
-  }
-}
+  };
+};
 
-export const forgotPassword = catchAsync( async(req, res, next) => {
-  if(!req.body.email){
-     return next(new AppError("Please input an email", 401))
+export const forgotPassword = catchAsync(async (req, res, next) => {
+  if (!req.body.email) {
+    return next(new AppError('Please input an email', 400));
   }
-  const user = await User.findOne({email: req.body.email});
-  if(!user) {
-    return next(new AppError("There is no user with that email address.", 404))
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new AppError('There is no user with that email address.', 404));
   }
 
   const resetToken = user.createPasswordResetToken();
-  await user.save({validateBeforeSave: false});
-})
+  await user.save({ validateBeforeSave: false });
+
+  const resetURL = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${resetToken}`;
+  const message = `Forgot your password? Click on the link below to reset your password \n ${resetURL}. If you didn't forget your password, please ignore this email`;
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Your password reset token (valid for 10 minutes)',
+      message,
+    });
+    res.status(200).json({
+      status: 'success',
+      message: "Token sent to email"
+    });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({validateBeforeSave: false});
+
+    return next(new AppError('There was an error sending the email. Try again later', 500))
+  }
+});
