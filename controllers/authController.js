@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import AppError from '../utils/appError.js';
 import bcrypt from 'bcryptjs';
 import sendEmail from '../utils/sendEmail.js';
-import crypto from "crypto";
+import crypto from 'crypto';
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -123,26 +123,34 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
     });
     res.status(200).json({
       status: 'success',
-      message: "Token sent to email"
+      message: 'Token sent to email',
     });
   } catch (err) {
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
-    await user.save({validateBeforeSave: false});
+    await user.save({ validateBeforeSave: false });
 
-    return next(new AppError('There was an error sending the email. Try again later', 500))
+    return next(
+      new AppError(
+        'There was an error sending the email. Try again later',
+        500,
+      ),
+    );
   }
 });
 
-export const resetPassword = catchAsync( async (req, res, next) => {
-  if (!req.body) return next(new AppError('Please provide a passowrd', 400))
-  const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+export const resetPassword = catchAsync(async (req, res, next) => {
+  if (!req.body) return next(new AppError('Please provide a passowrd', 400));
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
   const user = await User.findOne({
     passwordResetToken: hashedToken,
-    passwordResetExpires: {$gt: Date.now()}
+    passwordResetExpires: { $gt: Date.now() },
   });
-  
-  if(!user) {
+
+  if (!user) {
     return next(new AppError('Token is invalid or has expired', 400));
   }
   user.password = req.body.password;
@@ -154,6 +162,21 @@ export const resetPassword = catchAsync( async (req, res, next) => {
   const token = signToken(user._id);
   res.status(200).json({
     status: 'success',
+    token,
+  });
+});
+
+export const updatePassword = catchAsync(async (req, res, next) => {
+    if (!req.body) return next(new AppError('Please provide a passowrd', 400));
+  const user = await User.findById(req.user.id).select('+password');
+  const correct = await user.correctPassword(req.body.passwordCurrent, user.password);
+  if (!correct) return next(new AppError('Wrong password', 401));
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  await user.save();
+  const token = signToken(user._id);
+  res.status(200).json({
+    status: 'success',
     token
   })
-})
+});
