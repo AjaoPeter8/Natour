@@ -5,13 +5,25 @@ import morgan from 'morgan';
 import qs from 'qs';
 import AppError from './utils/appError.js';
 import globalErrorHandler from './controllers/errorController.js';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
 app.use(express.json());
 app.set('query parser', str => qs.parse(str));
 
 app.use(express.static(`${import.meta.dirname}/public`));
+
+if (process.env.NODE_ENV === 'development'){
 app.use(morgan('dev'));
+}
+
+const limiter = rateLimit ({
+    max: 100,
+    windowMs: 60*60*1000,
+    message: 'Too many requests. Try again in an hour'
+});
+
+app.use('/api', limiter);
 
 
 
