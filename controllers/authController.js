@@ -64,7 +64,7 @@ export const protect = catchAsync(async (req, res, next) => {
   }
   if (!token) {
     return next(
-      new AppError('You are not logged in! Plesae  login to have access.', 401),
+      new AppError('You are not logged in! Please login to have access.', 401),
     );
   }
 

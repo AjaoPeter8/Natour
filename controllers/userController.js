@@ -11,6 +11,14 @@ const filterObj = (obj, ...allowedFields) => {
     return newObj;
 }
 
+
+export const getAllUsers = catchAsync(async (req, res, next) => {
+    const users = await User.find();
+    res.status(200).json({
+        status: 'success',
+        users
+    })
+})
 export const updateMe = catchAsync(async (req, res, next) => {
   if (req.body.password || req.body.passwordConfirm)
     return next(
@@ -27,3 +35,11 @@ const filteredObject = filterObj(req.body, 'email', 'name')
     user
   })
 });
+
+export const deleteMe = catchAsync (async(req, res, next) => {
+    await User.findByIdAndUpdate(req.user.id, {active: false});
+    res.status(204).json({
+        status: 'success',
+        data: null
+    })
+})
