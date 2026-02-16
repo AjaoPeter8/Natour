@@ -15,7 +15,6 @@ export const aliasTopTours = (req, res, next) => {
 };
 
 export const getAllTours = catchAsync(async (req, res, next) => {
-  console.log('🔵 Async controller EXECUTING');
   // Use queryParams if it exists (from aliasTopTours), otherwise use req.query
   const query = req.queryParams || req.query;
   console.log('query:', query);
@@ -36,7 +35,7 @@ export const getAllTours = catchAsync(async (req, res, next) => {
 });
 
 export const getTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findById(req.params.id);
+  const tour = await Tour.findById(req.params.id).populate('reviews');
 
   if (!tour) {
     return next(new AppError('No tour found with that ID', 404));

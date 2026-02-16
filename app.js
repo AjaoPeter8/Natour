@@ -1,6 +1,7 @@
 import express from 'express';
 import tourRouter from './routes/tourRoute.js';
 import userRouter from './routes/userRoutes.js';
+import reviewRouter from './routes/reviewRoute.js'
 import morgan from 'morgan';
 import qs from 'qs';
 import AppError from './utils/appError.js';
@@ -52,6 +53,7 @@ app.use((req, res, next) => {
 // ROUTES
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
 
 app.use((req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

@@ -10,12 +10,14 @@ import {
   getMonthlyPlan,
 } from '../controllers/tourController.js';
 import { protect, restrictTo } from '../controllers/authController.js';
+import reviewRouter from '../routes/reviewRoute.js'
 
 const router = express.Router();
 router.route('/tour-stats').get(getTourStats);
 router.route('/top-5-tours').get(aliasTopTours, getAllTours);
 router.route('/tour-plan/:year').get(getMonthlyPlan);
 // router.param('id', checkID);
+router.use('/:tourId/reviews', reviewRouter);
 
 router
   .route('/:id')
