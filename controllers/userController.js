@@ -1,6 +1,7 @@
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
 import User from '../models/userModel.js';
+import { deleteOne, getAll, getOne, updateOne } from './handlerFactory.js';
 
 
 const filterObj = (obj, ...allowedFields) => {
@@ -12,13 +13,13 @@ const filterObj = (obj, ...allowedFields) => {
 }
 
 
-export const getAllUsers = catchAsync(async (req, res, next) => {
-    const users = await User.find();
-    res.status(200).json({
-        status: 'success',
-        users
-    })
-})
+export const getMe = (req, res, next) => {
+  req.params.id = req.user.id;
+  next();
+}
+
+export const getAllUsers = getAll(User);
+
 export const updateMe = catchAsync(async (req, res, next) => {
   if (req.body.password || req.body.passwordConfirm)
     return next(
@@ -43,3 +44,8 @@ export const deleteMe = catchAsync (async(req, res, next) => {
         data: null
     })
 })
+
+export const getUser = getOne(User);
+export const deleteUser = deleteOne(User);
+//DO NO UPDATE PASSWORD HERE
+export const updateUser = updateOne(User);

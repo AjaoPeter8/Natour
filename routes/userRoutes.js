@@ -6,8 +6,17 @@ import {
   resetPassword,
   updatePassword,
   protect,
+  restrictTo,
 } from '../controllers/authController.js';
-import { deleteMe, getAllUsers, updateMe } from '../controllers/userController.js';
+import {
+  deleteMe,
+  deleteUser,
+  getAllUsers,
+  getMe,
+  getUser,
+  updateMe,
+  updateUser,
+} from '../controllers/userController.js';
 
 const router = express.Router();
 
@@ -15,11 +24,23 @@ router.post('/signup', signup);
 router.post('/login', login);
 router.post('/forgotPassword', forgotPassword);
 router.patch('/resetPassword/:token', resetPassword);
-router.patch('/updatePassword', protect, updatePassword);
-router.patch('/updateMe', protect, updateMe);
-router.delete('/deleteMe', protect, deleteMe)
-router.get('/getAllUsers', protect, getAllUsers)
 
 
+//Accesible to only logged in users
+router.use(protect);
+router.patch('/updatePassword', updatePassword);
+router.patch('/updateMe', updateMe);
+router.delete('/deleteMe', deleteMe);
+router.get('/me', getMe, getUser);
 
+//Accessible to only admins
+router.use(restrictTo('admin'));
+
+router.route('/').get(getAllUsers);
+router
+  .route('/:id')
+  .get(getUser)
+  .patch(protect, restrictTo('admin'), updateUser)
+  .delete(protect, restrictTo('admin'), deleteUser);
+  
 export default router;
