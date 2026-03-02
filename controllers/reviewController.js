@@ -1,4 +1,7 @@
 import Review from '../models/reviewModel.js';
+import Tour from '../models/tourModel.js';
+import User from '../models/userModel.js';
+import AppError from '../utils/appError.js';
 // import catchAsync from '../utils/catchAsync.js';
 import {
   createOne,
@@ -16,11 +19,20 @@ const response = (statusCode, data, res) => {
   });
 };
 
-export const updateTourAndId = (req, res, next) => {
+export const updateTourAndId = async (req, res, next) => {
   if (!req.body.tour) req.body.tour = req.params.tourId;
   if (!req.body.user) req.body.user = req.user.id;
+  const tour = await Tour.findById(req.body.tour);
+  if (!tour) {
+    return next(new AppError('No tour found with that ID', 404));
+  };
+  const user = await User.findById(req.body.user);
+  if (!user) {
+    return next(new AppError('No user found with that ID', 404));
+  }
   next();
 };
+ 
 
 export const getAllReviews = getAll(Review);
 

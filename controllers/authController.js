@@ -101,7 +101,6 @@ export const protect = catchAsync(async (req, res, next) => {
 
 export const restrictTo = (...roles) => {
   return (req, res, next) => {
-    console.log('Running:', req.user);
     if (!roles.includes(req.user.role)) {
       return next(
         new AppError(

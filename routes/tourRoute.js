@@ -1,7 +1,9 @@
 import express from 'express';
 import {
+  getTourDistances,
   getTour,
   getTourStats,
+  getToursWithin,
   deleteTour,
   getAllTours,
   createTour,
@@ -22,6 +24,9 @@ router
 router.use('/:tourId/reviews', reviewRouter);
 
 router.route('/').get(getAllTours).post(protect, restrictTo('admin', 'lead-guide'), createTour);
+router.route('/tours-within/:distance/center/:latlng/unit/:unit').get(getToursWithin);
+router.route('/distances/:latlng/unit/:unit').get(getTourDistances);
+
 
 router
   .route('/:id')

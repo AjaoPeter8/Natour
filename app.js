@@ -1,17 +1,23 @@
 import express from 'express';
 import tourRouter from './routes/tourRoute.js';
 import userRouter from './routes/userRoutes.js';
-import reviewRouter from './routes/reviewRoute.js'
+import reviewRouter from './routes/reviewRoute.js';
 import morgan from 'morgan';
 import qs from 'qs';
 import AppError from './utils/appError.js';
 import globalErrorHandler from './controllers/errorController.js';
 import rateLimit from 'express-rate-limit';
-import helmet from 'helmet';    
-import mongoSanitize from '@exortek/express-mongo-sanitize'; 
+import helmet from 'helmet';
+import mongoSanitize from '@exortek/express-mongo-sanitize';
 import hpp from 'hpp';
 
 const app = express();
+app.set('view engine', 'pug');
+app.set('views', `${import.meta.dirname}/views`);
+
+//1) GLOBAL MIDDLEWARES
+//Serve static files
+app.use(express.static(`${import.meta.dirname}/public`));
 
 // Set Security HHTP headers
 app.use(helmet());
@@ -37,12 +43,18 @@ app.set('query parser', (str) => qs.parse(str));
 app.use(mongoSanitize());
 
 //Preventing Parameter Pollution
-app.use(hpp({
-    whitelist: ['duration', 'ratingsQuantity', 'ratingsAverage', 'maxGroupSize', 'difficulty', 'price']
-}))
-
-//Serve static files
-app.use(express.static(`${import.meta.dirname}/public`));
+app.use(
+  hpp({
+    whitelist: [
+      'duration',
+      'ratingsQuantity',
+      'ratingsAverage',
+      'maxGroupSize',
+      'difficulty',
+      'price',
+    ],
+  }),
+);
 
 // Test middleware
 app.use((req, res, next) => {
@@ -50,7 +62,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// ROUTES
+// 2) ROUTES
+app.get('/', (req, res) => {
+  res.status(200).render('base');
+});
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
